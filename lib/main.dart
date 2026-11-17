@@ -1,6 +1,20 @@
 import 'package:flutter/material.dart';
+import 'services/database_service.dart';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Sur ordinateur, il faut initialiser SQLite à la main
+  if (!kIsWeb && (Platform.isWindows || Platform.isLinux)) {
+    sqfliteFfiInit();
+    databaseFactory = databaseFactoryFfi;
+  }
+
+  final ok = await DatabaseService.instance.verifierAdmin('admin', 'admin123');
+  debugPrint('Admin OK : $ok');
   runApp(const MyApp());
 }
 
