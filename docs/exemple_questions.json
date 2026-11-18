@@ -1,0 +1,40 @@
+{
+  "discipline": "Java",
+  "questions": [
+    {
+      "enonce": "Quel mot-clé permet de créer un nouvel objet en Java ?",
+      "type": "radio",
+      "options": ["new", "create", "make", "object"],
+      "bonnes_reponses": [0],
+      "temps_limite": 30
+    },
+    {
+      "enonce": "Lesquels sont des types primitifs en Java ?",
+      "type": "checkbox",
+      "options": ["int", "String", "boolean", "Integer"],
+      "bonnes_reponses": [0, 2],
+      "temps_limite": 45
+    },
+    {
+      "enonce": "Quelle méthode est le point d'entrée d'un programme Java ?",
+      "type": "radio",
+      "options": ["start()", "main()", "run()", "init()"],
+      "bonnes_reponses": [1],
+      "temps_limite": 20
+    },
+    {
+      "enonce": "Quels mots-clés concernent l'héritage ?",
+      "type": "checkbox",
+      "options": ["extends", "implements", "import", "package"],
+      "bonnes_reponses": [0, 1],
+      "temps_limite": 40
+    },
+    {
+      "enonce": "Quelle collection n'accepte pas de doublons ?",
+      "type": "radio",
+      "options": ["ArrayList", "LinkedList", "HashSet", "Vector"],
+      "bonnes_reponses": [2],
+      "temps_limite": 30
+    }
+  ]
+}
