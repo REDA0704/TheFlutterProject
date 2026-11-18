@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'questions/gestion_questions_screen.dart';
+
 class DashboardAdminScreen extends StatelessWidget {
   const DashboardAdminScreen({super.key});
 
@@ -17,8 +19,28 @@ class DashboardAdminScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: const Center(
-        child: Text('Connecté en tant qu\'administrateur'),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Connecté en tant qu\'administrateur'),
+              const SizedBox(height: 24),
+              // US5 – gestion des questions
+              ElevatedButton.icon(
+                icon: const Icon(Icons.edit_note),
+                label: const Text('Gérer les questions'),
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const GestionQuestionsScreen(),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
