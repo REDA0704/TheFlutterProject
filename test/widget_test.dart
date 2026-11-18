@@ -1,30 +1,34 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:the_flutter_project/main.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
+  testWidgets('L\'accueil mène à la connexion candidat', (tester) async {
     await tester.pumpWidget(const MyApp());
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    expect(find.text('Bienvenue'), findsOneWidget);
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+    await tester.tap(find.text('Espace candidat'));
+    await tester.pumpAndSettle();
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    expect(find.text('Connexion'), findsOneWidget);
+    expect(find.text('Pas encore de compte ? S\'inscrire'), findsOneWidget);
+  });
+
+  testWidgets('Inscription : erreurs si les champs sont vides', (tester) async {
+    await tester.pumpWidget(const MyApp());
+    await tester.tap(find.text('Espace candidat'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Pas encore de compte ? S\'inscrire'));
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.text('Créer mon compte'));
+    await tester.tap(find.text('Créer mon compte'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Le nom est obligatoire.'), findsOneWidget);
+    expect(find.text('L\'email est obligatoire.'), findsOneWidget);
+    expect(find.text('La motivation est obligatoire.'), findsOneWidget);
+    expect(find.text('Veuillez corriger les champs en rouge.'), findsOneWidget);
   });
 }

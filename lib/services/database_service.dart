@@ -103,6 +103,20 @@ class DatabaseService {
     return db.insert('candidats', candidat.toMap());
   }
 
+  /// Connexion d'un candidat (US1) avec le couple Nom + Email,
+  /// qui identifie un compte de façon unique.
+  /// Les valeurs doivent déjà être normalisées (voir utils/validateurs.dart).
+  /// Renvoie null si aucun compte ne correspond.
+  Future<Candidat?> connecterCandidat(String nom, String email) async {
+    final db = await database;
+    final lignes = await db.query(
+      'candidats',
+      where: 'nom = ? AND email = ?',
+      whereArgs: [nom, email],
+    );
+    return lignes.isEmpty ? null : Candidat.fromMap(lignes.first);
+  }
+
   Future<Candidat?> getCandidat(int id) async {
     final db = await database;
     final lignes = await db.query('candidats', where: 'id = ?', whereArgs: [id]);
