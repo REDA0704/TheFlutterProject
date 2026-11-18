@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../admin/login_admin_screen.dart';
+import '../candidat/connexion_candidat_screen.dart';
 
 class AccueilScreen extends StatelessWidget {
   const AccueilScreen({super.key});
@@ -24,9 +25,11 @@ class AccueilScreen extends StatelessWidget {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
-                    // À brancher par la personne qui fait l'US1
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Espace candidat : à venir')),
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const ConnexionCandidatScreen(),
+                      ),
                     );
                   },
                   child: const Text('Espace candidat'),
