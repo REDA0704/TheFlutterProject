@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 
 import 'questions/gestion_questions_screen.dart';
 
+import 'resultats_screen.dart';
+
+import 'statistiques_screen.dart';
+
 class DashboardAdminScreen extends StatelessWidget {
   const DashboardAdminScreen({super.key});
 
@@ -36,6 +40,24 @@ class DashboardAdminScreen extends StatelessWidget {
                   MaterialPageRoute(
                     builder: (_) => const GestionQuestionsScreen(),
                   ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton.icon(
+                icon: const Icon(Icons.table_chart),
+                label: const Text('Tableau de bord'),
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ResultatsScreen()),
+                ),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton.icon(
+                icon: const Icon(Icons.pie_chart),
+                label: const Text('Statistiques'),
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const StatistiquesScreen()),
                 ),
               ),
             ],
