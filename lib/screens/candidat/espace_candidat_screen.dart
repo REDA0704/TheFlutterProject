@@ -1,22 +1,16 @@
 import 'package:flutter/material.dart';
 
 import '../../models/candidat.dart';
+import 'liste_tests_screen.dart';
 
-/// Page d'arrivée du candidat après inscription ou connexion (US1).
-///
-/// Elle reçoit le candidat connecté. Les fonctionnalités suivantes
-/// seront branchées ici :
-/// - US2 (Ichan) : liste des tests à passer
-/// - US3 (Ichan) : profil et modification des informations
 class EspaceCandidatScreen extends StatelessWidget {
   final Candidat candidat;
 
   const EspaceCandidatScreen({super.key, required this.candidat});
 
   void _aVenir(BuildContext context, String fonction) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('$fonction : à venir')),
-    );
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text('$fonction : à venir')));
   }
 
   @override
@@ -55,7 +49,12 @@ class EspaceCandidatScreen extends StatelessWidget {
                 ElevatedButton.icon(
                   icon: const Icon(Icons.quiz),
                   label: const Text('Passer un test'),
-                  onPressed: () => _aVenir(context, 'Passer un test'),
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ListeTestsScreen(candidat: candidat),
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 16),
                 OutlinedButton.icon(
