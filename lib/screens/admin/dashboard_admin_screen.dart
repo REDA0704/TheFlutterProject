@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 
 import 'questions/gestion_questions_screen.dart';
-
 import 'resultats_screen.dart';
-
 import 'statistiques_screen.dart';
 
+/// US4 : page d'accueil de l'administrateur après connexion.
+/// Donne accès aux questions (US5), au tableau de bord (US6)
+/// et aux statistiques (US7).
 class DashboardAdminScreen extends StatelessWidget {
   const DashboardAdminScreen({super.key});
 
