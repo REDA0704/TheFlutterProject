@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../models/resultat.dart';
 import '../../services/database_service.dart';
 import 'annees_resultats.dart';
 
@@ -84,7 +85,7 @@ class _ResultatsScreenState extends State<ResultatsScreen> {
             child: TextField(
               controller: _recherche,
               decoration: InputDecoration(
-                labelText: 'Rechercher un candidat (nom ou prénom)',
+                labelText: 'Rechercher un candidat (nom, prénom ou les deux)',
                 prefixIcon: const Icon(Icons.search),
                 border: const OutlineInputBorder(),
                 suffixIcon: IconButton(
@@ -176,18 +177,25 @@ class _ResultatsScreenState extends State<ResultatsScreen> {
     final total = r['total'] as int;
     final taux = total == 0 ? 0.0 : score / total;
     final reussi = taux >= DatabaseService.seuilReussite;
-    final couleur = reussi ? Colors.green.shade700 : Colors.red.shade700;
+    final enCours = Resultat.fromMap(r).enCours;
+    final couleur = enCours
+        ? Colors.orange.shade800
+        : (reussi ? Colors.green.shade700 : Colors.red.shade700);
 
     return ListTile(
       leading: CircleAvatar(
         backgroundColor: couleur,
         foregroundColor: Colors.white,
-        child: Icon(reussi ? Icons.check : Icons.close),
+        child: Icon(
+          enCours
+              ? Icons.hourglass_top
+              : (reussi ? Icons.check : Icons.close),
+        ),
       ),
       title: Text('${r['nom']} ${r['prenom']}'),
       subtitle: Text(
         '${r['discipline']} · ${_date(r['date'] as String)} · '
-        '${r['annee_scolaire']}',
+        '${r['annee_scolaire']}${enCours ? ' · test en cours' : ''}',
       ),
       trailing: Column(
         mainAxisAlignment: MainAxisAlignment.center,

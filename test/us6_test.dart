@@ -24,6 +24,12 @@ void main() {
     expect(tous.first['discipline'], 'Java');
     expect((await db.getResultatsRecents(texte: 'lucas')).length, 2);
     expect((await db.getResultatsRecents(texte: 'demobeta')).length, 1);
+    // Prénom + nom dans n'importe quel ordre
+    expect((await db.getResultatsRecents(texte: 'Lucas DEMOALPHA')).length, 2);
+    expect((await db.getResultatsRecents(texte: 'demoalpha  lucas')).length, 2);
+    expect(await db.getResultatsRecents(texte: 'Lucas DEMOBETA'), isEmpty);
+    // Les jokers SQL sont pris comme du texte
+    expect(await db.getResultatsRecents(texte: '%'), isEmpty);
     expect((await db.getResultatsRecents(annee: '2025-2026')).length, 2);
     expect(
       await db.getResultatsRecents(texte: 'lucas', annee: '2025-2026'),

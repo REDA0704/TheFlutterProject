@@ -18,6 +18,7 @@ class _StatistiquesScreenState extends State<StatistiquesScreen> {
   String _annee = anneeScolaireActuelle();
   late Future<List<String>> _annees;
   late Future<Map<String, double>> _taux;
+  int _nbEtudiants = 0;
   @override
   void initState() {
     super.initState();
@@ -29,6 +30,7 @@ class _StatistiquesScreenState extends State<StatistiquesScreen> {
     final parDiscipline = await _db.tauxReussiteParDiscipline(annee: annee);
     if (parDiscipline.isEmpty) return {};
     final global = await _db.tauxReussiteGlobal(annee);
+    _nbEtudiants = await _db.nombreEtudiantsEvalues(annee);
     return {...parDiscipline, 'Global': global};
   }
 
@@ -74,6 +76,10 @@ class _StatistiquesScreenState extends State<StatistiquesScreen> {
             '${(DatabaseService.seuilReussite * 100).toStringAsFixed(0)} %',
           ),
           const Text('Vert : réussi | Rouge : échoué'),
+          const Text(
+            "Seuls les tests terminés sont comptés. L'année est celle "
+            'où le test a été passé.',
+          ),
           FutureBuilder<Map<String, double>>(
             future: _taux,
             builder: (context, snapshot) {
@@ -91,8 +97,16 @@ class _StatistiquesScreenState extends State<StatistiquesScreen> {
               final taux = snapshot.data!;
               return Column(
                 children: [
+                  _carte(
+                    'Taux général – tous les étudiants',
+                    taux['Global'],
+                    detail: taux['Global'] == null
+                        ? null
+                        : '$_nbEtudiants étudiant(s) évalué(s). Un étudiant '
+                            "est reçu si l'ensemble de ses tests atteint le "
+                            'seuil.',
+                  ),
                   for (final d in disciplines) _carte(d, taux[d]),
-                  _carte('Taux général', taux['Global']),
                 ],
               );
             },
@@ -102,7 +116,7 @@ class _StatistiquesScreenState extends State<StatistiquesScreen> {
     );
   }
 
-  Widget _carte(String titre, double? taux) {
+  Widget _carte(String titre, double? taux, {String? detail}) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -140,6 +154,10 @@ class _StatistiquesScreenState extends State<StatistiquesScreen> {
               ),
               Text('Réussi : ${taux.toStringAsFixed(1)} %'),
               Text('Échoué : ${(100 - taux).toStringAsFixed(1)} %'),
+              if (detail != null) ...[
+                const SizedBox(height: 8),
+                Text(detail, style: Theme.of(context).textTheme.bodySmall),
+              ],
             ],
           ],
         ),

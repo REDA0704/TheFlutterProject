@@ -23,7 +23,9 @@ void main() {
       'Algo': 0.0,
       'HTML/CSS': 100.0,
     });
-    expect(await db.tauxReussiteGlobal('2026-2027'), 75.0);
+    // Par étudiant : Lucas 11/20 (55 %), Sarah 5/10, Emma 9/10 -> 3 reçus sur 3
+    expect(await db.tauxReussiteGlobal('2026-2027'), 100.0);
+    expect(await db.nombreEtudiantsEvalues('2026-2027'), 3);
     expect(await db.tauxReussiteParDiscipline(annee: '2025-2026'), {
       'Java': 0.0,
       'Algo': 100.0,
