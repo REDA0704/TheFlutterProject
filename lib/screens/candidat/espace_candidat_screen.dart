@@ -2,16 +2,12 @@ import 'package:flutter/material.dart';
 
 import '../../models/candidat.dart';
 import 'liste_tests_screen.dart';
+import 'profil_screen.dart';
 
 class EspaceCandidatScreen extends StatelessWidget {
   final Candidat candidat;
 
   const EspaceCandidatScreen({super.key, required this.candidat});
-
-  void _aVenir(BuildContext context, String fonction) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text('$fonction : à venir')));
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -60,7 +56,12 @@ class EspaceCandidatScreen extends StatelessWidget {
                 OutlinedButton.icon(
                   icon: const Icon(Icons.account_circle),
                   label: const Text('Mon profil'),
-                  onPressed: () => _aVenir(context, 'Mon profil'),
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ProfilScreen(candidat: candidat),
+                    ),
+                  ),
                 ),
               ],
             ),

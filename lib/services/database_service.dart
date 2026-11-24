@@ -123,6 +123,21 @@ class DatabaseService {
     return lignes.isEmpty ? null : Candidat.fromMap(lignes.first);
   }
 
+    Future<void> updateProfil({
+    required int id,
+    required String adresse,
+    required Motivation motivation,
+  }) async {
+    final db = await database;
+    final nombre = await db.update(
+      'candidats',
+      {'adresse': adresse, 'motivation': motivation.name},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+    if (nombre != 1) throw StateError('Candidat introuvable');
+  }
+
   Future<void> updateCandidat(Candidat candidat) async {
     final db = await database;
     await db.update(

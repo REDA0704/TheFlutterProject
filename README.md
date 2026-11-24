@@ -18,3 +18,6 @@ Plateforme d'évaluation en ligne : les candidats passent des tests
 
 ## US2 - Passer un test
 Tests chronometres et scores enregistres dans SQLite.
+
+## US3 - Profil candidat
+Adresse, motivation et historique des scores.
