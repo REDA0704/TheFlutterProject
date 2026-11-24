@@ -1,7 +1,7 @@
 enum Motivation {
   poursuiteEtudes('Poursuite d\'études'),
   reorientation('Réorientation'),
-  reconversionPro('Reconversion pro');
+  reconversionPro('Reconversion');
 
   final String label;
   const Motivation(this.label);

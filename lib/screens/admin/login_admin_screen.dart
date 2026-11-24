@@ -1,10 +1,18 @@
 import 'package:flutter/material.dart';
 
 import '../../services/database_service.dart';
+import '../../utils/limiteur_tentatives.dart';
+import 'changer_mot_de_passe_screen.dart';
 import 'dashboard_admin_screen.dart';
 
+/// US4 – Connexion avec le compte administrateur pré-existant.
+///
+/// - 5 mots de passe faux de suite : connexion bloquée 30 secondes.
+/// - Mot de passe par défaut : changement obligatoire avant d'entrer.
 class LoginAdminScreen extends StatefulWidget {
   const LoginAdminScreen({super.key});
+
+  static final limiteur = LimiteurTentatives();
 
   @override
   State<LoginAdminScreen> createState() => _LoginAdminScreenState();
@@ -32,6 +40,13 @@ class _LoginAdminScreenState extends State<LoginAdminScreen> {
       return;
     }
 
+    final limiteur = LoginAdminScreen.limiteur;
+    final bloque = limiteur.tempsRestant(login);
+    if (bloque != null) {
+      setState(() => _erreur = LimiteurTentatives.message(bloque));
+      return;
+    }
+
     setState(() {
       _chargement = true;
       _erreur = null;
@@ -43,11 +58,18 @@ class _LoginAdminScreenState extends State<LoginAdminScreen> {
     if (!mounted) return;
 
     if (ok) {
+      limiteur.succes(login);
+      final parDefaut = motDePasse == DatabaseService.adminMotDePasseParDefaut;
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const DashboardAdminScreen()),
+        MaterialPageRoute(
+          builder: (_) => parDefaut
+              ? ChangerMotDePasseScreen(login: login, obligatoire: true)
+              : DashboardAdminScreen(login: login),
+        ),
       );
     } else {
+      limiteur.echec(login);
       setState(() {
         _chargement = false;
         _erreur = 'Identifiant ou mot de passe incorrect.';

@@ -22,6 +22,9 @@ void main() {
     databaseFactory = databaseFactoryFfi;
     // On repart d'une base vide à chaque lancement des tests
     await deleteDatabase(join(await getDatabasesPath(), 'flutter_eval.db'));
+    // La base est créée avec des questions de départ : on les retire
+    // pour tester l'ajout / la suppression sur des listes connues.
+    await (await db.database).delete('questions');
   });
 
   test('ajouter, modifier puis supprimer une question', () async {

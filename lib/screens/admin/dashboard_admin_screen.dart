@@ -1,9 +1,18 @@
 import 'package:flutter/material.dart';
 
+import 'changer_mot_de_passe_screen.dart';
 import 'questions/gestion_questions_screen.dart';
+import 'resultats_screen.dart';
+import 'statistiques_screen.dart';
 
+/// US4 : page d'accueil de l'administrateur après connexion.
+/// Donne accès aux questions (US5), au tableau de bord (US6)
+/// et aux statistiques (US7).
 class DashboardAdminScreen extends StatelessWidget {
-  const DashboardAdminScreen({super.key});
+  const DashboardAdminScreen({super.key, required this.login});
+
+  /// Identifiant de l'admin connecté.
+  final String login;
 
   @override
   Widget build(BuildContext context) {
@@ -11,6 +20,16 @@ class DashboardAdminScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Espace administrateur'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.key),
+            tooltip: 'Changer mon mot de passe',
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => ChangerMotDePasseScreen(login: login),
+              ),
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.logout),
             tooltip: 'Se déconnecter',
@@ -25,7 +44,7 @@ class DashboardAdminScreen extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text('Connecté en tant qu\'administrateur'),
+              Text('Connecté en tant que « $login »'),
               const SizedBox(height: 24),
               // US5 – gestion des questions
               ElevatedButton.icon(
@@ -36,6 +55,24 @@ class DashboardAdminScreen extends StatelessWidget {
                   MaterialPageRoute(
                     builder: (_) => const GestionQuestionsScreen(),
                   ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton.icon(
+                icon: const Icon(Icons.table_chart),
+                label: const Text('Tableau de bord'),
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ResultatsScreen()),
+                ),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton.icon(
+                icon: const Icon(Icons.pie_chart),
+                label: const Text('Statistiques'),
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const StatistiquesScreen()),
                 ),
               ),
             ],

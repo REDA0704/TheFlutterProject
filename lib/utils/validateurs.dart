@@ -69,3 +69,32 @@ String normaliserPrenom(String prenom) {
 }
 
 String normaliserEmail(String email) => email.trim().toLowerCase();
+
+const int longueurMotDePasseMin = 8;
+
+/// Mot de passe : au moins 8 caractères, avec au moins une lettre
+/// et un chiffre (candidat à l'inscription, admin au changement).
+String? validerMotDePasse(String? valeur) {
+  if (valeur == null || valeur.isEmpty) {
+    return 'Le mot de passe est obligatoire.';
+  }
+  if (valeur.length < longueurMotDePasseMin) {
+    return 'Au moins $longueurMotDePasseMin caractères.';
+  }
+  if (!RegExp(r'[A-Za-zÀ-ÿ]').hasMatch(valeur) ||
+      !RegExp(r'\d').hasMatch(valeur)) {
+    return 'Au moins une lettre et un chiffre.';
+  }
+  return null;
+}
+
+/// Vérifie que la confirmation est identique au mot de passe.
+String? validerConfirmation(String? confirmation, String motDePasse) {
+  if (confirmation == null || confirmation.isEmpty) {
+    return 'Confirmez le mot de passe.';
+  }
+  if (confirmation != motDePasse) {
+    return 'Les deux mots de passe sont différents.';
+  }
+  return null;
+}
