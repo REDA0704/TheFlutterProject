@@ -13,7 +13,7 @@ void main() {
     await databaseFactory.setDatabasesPath(dossier.path);
     final db = DatabaseService.instance;
     addTearDown(() async {
-      await (await db.database).close();
+      await db.fermer();
       await dossier.delete(recursive: true);
     });
     Candidat candidat(String nom) => Candidat(

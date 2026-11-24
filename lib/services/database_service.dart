@@ -4,6 +4,9 @@ import 'package:sqflite/sqflite.dart';
 import '../models/candidat.dart';
 import '../models/question.dart';
 import '../models/resultat.dart';
+import '../utils/disciplines.dart';
+import '../utils/securite.dart';
+import 'questions_depart.dart';
 
 class DatabaseService {
   // Singleton : une seule instance partagée par toute l'appli
@@ -12,6 +15,14 @@ class DatabaseService {
 
   // Un test est "réussi" à partir de 50 % de bonnes réponses
   static const double seuilReussite = 0.5;
+
+  // Version du schéma : à augmenter à chaque changement de structure.
+  // v2 : mot de passe admin haché + sel, questions de départ.
+  static const int versionBase = 2;
+
+  // Compte administrateur créé au premier lancement (US4)
+  static const String adminLoginParDefaut = 'admin';
+  static const String adminMotDePasseParDefaut = 'admin123';
 
   Database? _db;
 
@@ -22,12 +33,66 @@ class DatabaseService {
     final chemin = join(await getDatabasesPath(), 'flutter_eval.db');
     return openDatabase(
       chemin,
-      version: 1,
+      version: versionBase,
       onConfigure: (db) async {
         await db.execute('PRAGMA foreign_keys = ON');
       },
       onCreate: _creerTables,
+      onUpgrade: _migrer,
     );
+  }
+
+  /// Ferme la base (utile dans les tests pour repartir de zéro).
+  Future<void> fermer() async {
+    await _db?.close();
+    _db = null;
+  }
+
+  /// Met à jour une base créée par une ancienne version de l'appli,
+  /// sans perdre les candidats ni les résultats déjà enregistrés.
+  Future<void> _migrer(Database db, int ancienne, int nouvelle) async {
+    if (ancienne < 2) {
+      // Le mot de passe admin était stocké en clair : on le hache.
+      await db.execute(
+        "ALTER TABLE admins ADD COLUMN sel TEXT NOT NULL DEFAULT ''",
+      );
+      final admins = await db.query('admins');
+      for (final a in admins) {
+        final sel = genererSel();
+        await db.update(
+          'admins',
+          {
+            'sel': sel,
+            'mot_de_passe': hacherMotDePasse(a['mot_de_passe'] as String, sel),
+          },
+          where: 'id = ?',
+          whereArgs: [a['id']],
+        );
+      }
+      await _insererQuestionsDeDepart(db, seulementSiVide: true);
+    }
+  }
+
+  /// Insère les questions de départ dans chaque discipline.
+  /// Avec [seulementSiVide], une discipline qui a déjà des questions
+  /// (créées par l'admin) n'est pas touchée.
+  Future<void> _insererQuestionsDeDepart(
+    DatabaseExecutor db, {
+    bool seulementSiVide = false,
+  }) async {
+    final depart = questionsDeDepart();
+    for (final d in disciplines) {
+      if (seulementSiVide) {
+        final n = Sqflite.firstIntValue(await db.rawQuery(
+          'SELECT COUNT(*) FROM questions WHERE discipline = ?',
+          [d],
+        ));
+        if ((n ?? 0) > 0) continue;
+      }
+      for (final q in depart.where((q) => q.discipline == d)) {
+        await db.insert('questions', q.toMap());
+      }
+    }
   }
 
   // Appelée une seule fois, à la toute première création de la base
@@ -75,12 +140,21 @@ class DatabaseService {
       CREATE TABLE admins (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         login TEXT NOT NULL UNIQUE,
-        mot_de_passe TEXT NOT NULL
+        mot_de_passe TEXT NOT NULL, -- hash SHA-256 (sel + mot de passe)
+        sel TEXT NOT NULL
       )
     ''');
 
-    // Compte admin pré-existant (US4)
-    await db.insert('admins', {'login': 'admin', 'mot_de_passe': 'admin123'});
+    // Compte admin pré-existant (US4), mot de passe stocké haché
+    final sel = genererSel();
+    await db.insert('admins', {
+      'login': adminLoginParDefaut,
+      'mot_de_passe': hacherMotDePasse(adminMotDePasseParDefaut, sel),
+      'sel': sel,
+    });
+
+    // Questions de départ : un candidat peut passer un test dès l'installation
+    await _insererQuestionsDeDepart(db);
   }
 
   // ───────────── ADMIN (US4) ─────────────
@@ -89,10 +163,16 @@ class DatabaseService {
     final db = await database;
     final lignes = await db.query(
       'admins',
-      where: 'login = ? AND mot_de_passe = ?',
-      whereArgs: [login, motDePasse],
+      where: 'login = ?',
+      whereArgs: [login],
     );
-    return lignes.isNotEmpty;
+    if (lignes.isEmpty) return false;
+    final admin = lignes.first;
+    return verifierMotDePasse(
+      motDePasse,
+      admin['sel'] as String,
+      admin['mot_de_passe'] as String,
+    );
   }
 
   // ───────────── CANDIDATS (US1, US3) ─────────────
@@ -123,7 +203,9 @@ class DatabaseService {
     return lignes.isEmpty ? null : Candidat.fromMap(lignes.first);
   }
 
-    Future<void> updateProfil({
+  /// US3 : le candidat ne peut modifier que son adresse et sa motivation.
+  /// Nom, prénom, email et âge restent ceux de l'inscription.
+  Future<void> updateProfil({
     required int id,
     required String adresse,
     required Motivation motivation,
@@ -201,6 +283,7 @@ class DatabaseService {
       'questions',
       where: 'discipline = ?',
       whereArgs: [discipline],
+      orderBy: 'id',
     );
     return lignes.map(Question.fromMap).toList();
   }
@@ -230,6 +313,43 @@ class DatabaseService {
   Future<int> insertResultat(Resultat resultat) async {
     final db = await database;
     return db.insert('resultats', resultat.toMap());
+  }
+
+  /// Démarre un test (US2) : la tentative est enregistrée DÈS LE DÉBUT,
+  /// avec un score de 0. Ainsi, quitter le test en cours de route, fermer
+  /// l'application ou couper le téléphone ne permet pas de le repasser :
+  /// la contrainte UNIQUE (candidat_id, discipline) l'interdit.
+  ///
+  /// Renvoie l'id du résultat, ou null si le test a déjà été passé.
+  Future<int?> demarrerTest({
+    required int candidatId,
+    required String discipline,
+    required int totalQuestions,
+  }) async {
+    final db = await database;
+    try {
+      return await db.insert('resultats', {
+        'candidat_id': candidatId,
+        'discipline': discipline,
+        'score': 0,
+        'total': totalQuestions,
+        'date': DateTime.now().toIso8601String(),
+      });
+    } on DatabaseException catch (e) {
+      if (e.isUniqueConstraintError()) return null;
+      rethrow;
+    }
+  }
+
+  /// Enregistre le score après chaque question répondue (US2).
+  Future<void> majScore(int resultatId, int score) async {
+    final db = await database;
+    await db.update(
+      'resultats',
+      {'score': score},
+      where: 'id = ?',
+      whereArgs: [resultatId],
+    );
   }
 
   /// Un test ne peut être passé qu'une fois (US2).
@@ -292,9 +412,9 @@ class DatabaseService {
              AVG(CASE WHEN r.score * 1.0 / r.total >= ? THEN 1.0 ELSE 0.0 END) * 100 AS taux
       FROM resultats r
       JOIN candidats c ON c.id = r.candidat_id
-      ${annee != null ? 'WHERE c.annee_scolaire = ?' : ''}
+      WHERE r.total > 0 ${annee != null ? 'AND c.annee_scolaire = ?' : ''}
       GROUP BY r.discipline
-    ''', [seuilReussite, if (annee != null) annee]);
+    ''', [seuilReussite, ?annee]);
     return {
       for (final l in lignes)
         l['discipline'] as String: (l['taux'] as num).toDouble(),
@@ -308,7 +428,7 @@ class DatabaseService {
       SELECT AVG(CASE WHEN r.score * 1.0 / r.total >= ? THEN 1.0 ELSE 0.0 END) * 100 AS taux
       FROM resultats r
       JOIN candidats c ON c.id = r.candidat_id
-      WHERE c.annee_scolaire = ?
+      WHERE r.total > 0 AND c.annee_scolaire = ?
     ''', [seuilReussite, annee]);
     final taux = res.first['taux'];
     return taux == null ? 0.0 : (taux as num).toDouble();
