@@ -6,6 +6,7 @@ import '../../services/database_service.dart';
 import '../../utils/disciplines.dart';
 import 'passer_test_screen.dart';
 
+/// US2 : liste des disciplines, avec le score des tests déjà passés.
 class ListeTestsScreen extends StatefulWidget {
   const ListeTestsScreen({super.key, required this.candidat});
   final Candidat candidat;
@@ -45,11 +46,25 @@ class _ListeTestsScreenState extends State<ListeTestsScreen> {
         _message('Aucune question disponible pour cette discipline.');
         return;
       }
+      if (!await _confirmerDebut(discipline, questions.length)) return;
+
+      // La tentative est enregistrée dès maintenant : quitter le test
+      // ne permettra pas de le recommencer (1 seul passage, US2).
+      final resultatId = await _db.demarrerTest(
+        candidatId: id,
+        discipline: discipline,
+        totalQuestions: questions.length,
+      );
+      if (!mounted) return;
+      if (resultatId == null) {
+        _message('Ce test a déjà été passé.');
+        return;
+      }
       await Navigator.push<void>(
         context,
         MaterialPageRoute(
           builder: (_) => PasserTestScreen(
-            candidatId: id,
+            resultatId: resultatId,
             discipline: discipline,
             questions: questions,
           ),
@@ -63,6 +78,32 @@ class _ListeTestsScreenState extends State<ListeTestsScreen> {
         _recharger();
       }
     }
+  }
+
+  Future<bool> _confirmerDebut(String discipline, int nbQuestions) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Commencer le test $discipline ?'),
+        content: Text(
+          '$nbQuestions question(s), chacune avec un temps limité.\n\n'
+          'Ce test ne peut être passé qu\'une seule fois : si vous le '
+          'quittez avant la fin, les questions restantes seront comptées '
+          'comme fausses.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Commencer'),
+          ),
+        ],
+      ),
+    );
+    return ok ?? false;
   }
 
   void _message(String texte) {
@@ -98,7 +139,7 @@ class _ListeTestsScreenState extends State<ListeTestsScreen> {
                     subtitle: Text(
                       scores[d] == null
                           ? 'Disponible'
-                          : 'Déjà passé - score '
+                          : 'Déjà passé – score '
                                 '${scores[d]!.score}/${scores[d]!.total}',
                     ),
                     trailing: ElevatedButton(
