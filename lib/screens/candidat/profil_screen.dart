@@ -126,12 +126,7 @@ class _ProfilScreenState extends State<ProfilScreen> {
             decoration: const InputDecoration(labelText: 'Motivation'),
             items: [
               for (final m in Motivation.values)
-                DropdownMenuItem(
-                  value: m,
-                  child: Text(
-                    m == Motivation.reconversionPro ? 'Reconversion' : m.label,
-                  ),
-                ),
+                DropdownMenuItem(value: m, child: Text(m.label)),
             ],
             onChanged: _sauvegarde
                 ? null
