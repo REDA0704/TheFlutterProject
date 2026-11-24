@@ -5,6 +5,7 @@ import 'package:the_flutter_project/services/database_service.dart';
 /// Données fictives réservées aux tests et à l'émulateur de démonstration.
 Future<void> insererDemoResultats() async {
   final db = DatabaseService.instance;
+  final ids = <String, int>{};
   Future<void> ajouter(
     String nom,
     String prenom,
@@ -14,9 +15,8 @@ Future<void> insererDemoResultats() async {
     DateTime date,
   ) async {
     final email = '${nom.toLowerCase()}@example.test';
-    final candidat = await db.connecterCandidat(nom, email);
     final id =
-        candidat?.id ??
+        ids[nom] ??
         await db.insertCandidat(
           Candidat(
             nom: nom,
@@ -27,7 +27,9 @@ Future<void> insererDemoResultats() async {
             motivation: Motivation.poursuiteEtudes,
             anneeScolaire: annee,
           ),
+          motDePasse: 'demo1234',
         );
+    ids[nom] = id;
     if (!await db.aDejaPasseTest(id, discipline)) {
       await db.insertResultat(
         Resultat(

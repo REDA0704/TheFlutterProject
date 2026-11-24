@@ -25,8 +25,8 @@ void main() {
       motivation: Motivation.poursuiteEtudes,
       anneeScolaire: '2026-2027',
     );
-    final id = await db.insertCandidat(candidat('ALPHA'));
-    final autre = await db.insertCandidat(candidat('BETA'));
+    final id = await db.insertCandidat(candidat('ALPHA'), motDePasse: 'secret123');
+    final autre = await db.insertCandidat(candidat('BETA'), motDePasse: 'secret123');
     final avant = (await db.getCandidat(id))!.toMap();
     final autreAvant = (await db.getCandidat(autre))!.toMap();
     await db.updateProfil(
