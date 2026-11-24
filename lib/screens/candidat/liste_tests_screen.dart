@@ -4,6 +4,7 @@ import '../../models/candidat.dart';
 import '../../models/resultat.dart';
 import '../../services/database_service.dart';
 import '../../utils/disciplines.dart';
+import '../../utils/melange.dart';
 import 'passer_test_screen.dart';
 
 /// US2 : liste des disciplines, avec le score des tests déjà passés.
@@ -40,7 +41,9 @@ class _ListeTestsScreenState extends State<ListeTestsScreen> {
         _message('Ce test a déjà été passé.');
         return;
       }
-      final questions = await _db.getQuestionsParDiscipline(discipline);
+      // Ordre des questions et des réponses mélangé pour chaque candidat
+      final questions =
+          preparerTest(await _db.getQuestionsParDiscipline(discipline));
       if (!mounted) return;
       if (questions.isEmpty) {
         _message('Aucune question disponible pour cette discipline.');
@@ -54,6 +57,9 @@ class _ListeTestsScreenState extends State<ListeTestsScreen> {
         candidatId: id,
         discipline: discipline,
         totalQuestions: questions.length,
+        dureeMax: Duration(
+          seconds: questions.fold(0, (somme, q) => somme + q.tempsLimite),
+        ),
       );
       if (!mounted) return;
       if (resultatId == null) {

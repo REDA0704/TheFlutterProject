@@ -16,7 +16,9 @@ bool reponseCorrecte(Set<int> choix, List<int> bonnes) {
 ///
 /// La tentative a déjà été créée en base (score 0) avant d'ouvrir cet écran
 /// (voir [DatabaseService.demarrerTest]). Le score est enregistré après
-/// chaque question : si le candidat quitte, son score reste celui atteint.
+/// chaque bonne réponse, et le test est marqué terminé à la fin ou en cas
+/// d'abandon. Si l'appli est fermée, le test est compté tel quel une fois
+/// son heure limite passée.
 class PasserTestScreen extends StatefulWidget {
   const PasserTestScreen({
     super.key,
@@ -91,7 +93,11 @@ class _PasserTestScreenState extends State<PasserTestScreen> {
         _demarrerChrono();
       }
     });
-    if (correct) _sauvegarder();
+    if (_termine) {
+      _sauvegarder(fin: true);
+    } else if (correct) {
+      _sauvegarder();
+    }
 
     if (expire && !_termine && mounted) {
       ScaffoldMessenger.of(context)
@@ -103,11 +109,16 @@ class _PasserTestScreenState extends State<PasserTestScreen> {
     }
   }
 
-  void _sauvegarder() {
+  /// Enregistre le score. Avec [fin], le test est marqué terminé.
+  void _sauvegarder({bool fin = false}) {
     final score = _score;
     _sauvegardeEnCours = _sauvegardeEnCours.then((_) async {
       try {
-        await _db.majScore(widget.resultatId, score);
+        if (fin) {
+          await _db.terminerTest(widget.resultatId, score);
+        } else {
+          await _db.majScore(widget.resultatId, score);
+        }
         if (mounted && _erreur != null) setState(() => _erreur = null);
       } catch (_) {
         if (mounted) {
@@ -143,6 +154,7 @@ class _PasserTestScreenState extends State<PasserTestScreen> {
     if (ok != true || !mounted) return;
     _timer?.cancel();
     _termine = true;
+    _sauvegarder(fin: true);
     await _sauvegardeEnCours;
     if (mounted) Navigator.pop(context);
   }
@@ -287,7 +299,7 @@ class _PasserTestScreenState extends State<PasserTestScreen> {
             if (_erreur != null) ...[
               Text(_erreur!, textAlign: TextAlign.center),
               TextButton(
-                onPressed: () => setState(_sauvegarder),
+                onPressed: () => setState(() => _sauvegarder(fin: true)),
                 child: const Text('Réessayer'),
               ),
             ],
