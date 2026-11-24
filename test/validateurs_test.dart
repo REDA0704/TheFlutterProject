@@ -61,4 +61,20 @@ void main() {
       expect(anneeScolaire(DateTime(2026, 8, 31)), '2025-2026');
     });
   });
+
+  group('validerMotDePasse', () {
+    test('refuse vide, trop court, sans chiffre ou sans lettre', () {
+      expect(validerMotDePasse(''), isNotNull);
+      expect(validerMotDePasse('abc12'), isNotNull);
+      expect(validerMotDePasse('abcdefgh'), isNotNull);
+      expect(validerMotDePasse('12345678'), isNotNull);
+    });
+    test('accepte 8 caractères avec lettre et chiffre', () {
+      expect(validerMotDePasse('secret123'), isNull);
+    });
+    test('confirmation identique', () {
+      expect(validerConfirmation('secret123', 'secret123'), isNull);
+      expect(validerConfirmation('secret12', 'secret123'), isNotNull);
+    });
+  });
 }

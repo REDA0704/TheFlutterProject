@@ -10,8 +10,10 @@ import 'espace_candidat_screen.dart';
 /// US1 – Inscription d'un candidat.
 ///
 /// Tous les champs sont obligatoires. Un message d'erreur s'affiche sous
-/// chaque champ manquant ou incorrect. Un seul compte est possible
-/// par couple Nom + Email (contrainte UNIQUE dans la base).
+/// chaque champ manquant ou incorrect. Un seul compte est possible par
+/// adresse email (contrainte UNIQUE dans la base) : on ne peut pas créer
+/// un 2e compte en changeant l'orthographe du nom pour repasser les tests.
+/// Le mot de passe protège le compte (stocké haché, jamais en clair).
 class InscriptionScreen extends StatefulWidget {
   const InscriptionScreen({super.key});
 
@@ -26,7 +28,10 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
   final _emailController = TextEditingController();
   final _ageController = TextEditingController();
   final _adresseController = TextEditingController();
+  final _motDePasseController = TextEditingController();
+  final _confirmationController = TextEditingController();
   Motivation? _motivation;
+  bool _masquer = true;
 
   String? _erreur;
   bool _chargement = false;
@@ -38,6 +43,8 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
     _emailController.dispose();
     _ageController.dispose();
     _adresseController.dispose();
+    _motDePasseController.dispose();
+    _confirmationController.dispose();
     super.dispose();
   }
 
@@ -63,26 +70,30 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
     );
 
     try {
-      final id = await DatabaseService.instance.insertCandidat(candidat);
+      final id = await DatabaseService.instance.insertCandidat(
+        candidat,
+        motDePasse: _motDePasseController.text,
+      );
       if (!mounted) return;
 
       final cree = Candidat.fromMap({...candidat.toMap(), 'id': id});
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Compte créé avec succès !')),
       );
-      // On remplace l'écran d'inscription : le bouton retour ne doit pas
-      // ramener au formulaire une fois le compte créé.
-      Navigator.pushReplacement(
+      // On retire la connexion et l'inscription de l'historique : le bouton
+      // retour de l'espace candidat ramène à l'accueil, pas au formulaire.
+      Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (_) => EspaceCandidatScreen(candidat: cree)),
+        (route) => route.isFirst,
       );
     } on DatabaseException catch (e) {
       if (!mounted) return;
       setState(() {
         _chargement = false;
         _erreur = e.isUniqueConstraintError()
-            ? 'Un compte existe déjà avec ce nom et cet email. '
-                'Utilisez « J\'ai déjà un compte ».'
+            ? 'Un compte existe déjà avec cet email. '
+                'Connectez-vous depuis l\'écran précédent.'
             : 'Erreur lors de l\'inscription, veuillez réessayer.';
       });
     }
@@ -143,6 +154,33 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
                     decoration: _decoration('Adresse postale', Icons.home),
                     maxLines: 2,
                     validator: validerAdresse,
+                  ),
+                  espace,
+                  TextFormField(
+                    controller: _motDePasseController,
+                    obscureText: _masquer,
+                    decoration: _decoration('Mot de passe', Icons.lock).copyWith(
+                      helperText: '8 caractères minimum, une lettre et un chiffre',
+                      suffixIcon: IconButton(
+                        tooltip: _masquer ? 'Afficher' : 'Masquer',
+                        icon: Icon(
+                          _masquer ? Icons.visibility : Icons.visibility_off,
+                        ),
+                        onPressed: () => setState(() => _masquer = !_masquer),
+                      ),
+                    ),
+                    validator: validerMotDePasse,
+                  ),
+                  espace,
+                  TextFormField(
+                    controller: _confirmationController,
+                    obscureText: _masquer,
+                    decoration: _decoration(
+                      'Confirmer le mot de passe',
+                      Icons.lock_outline,
+                    ),
+                    validator: (v) =>
+                        validerConfirmation(v, _motDePasseController.text),
                   ),
                   espace,
                   DropdownButtonFormField<Motivation>(
