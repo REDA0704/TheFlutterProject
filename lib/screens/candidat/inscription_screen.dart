@@ -96,6 +96,14 @@ class _InscriptionScreenState extends State<InscriptionScreen> {
                 'Connectez-vous depuis l\'écran précédent.'
             : 'Erreur lors de l\'inscription, veuillez réessayer.';
       });
+    } catch (e) {
+      // Toute autre erreur (base inaccessible…) : on débloque le bouton
+      // et on affiche la cause au lieu de tourner sans fin.
+      if (!mounted) return;
+      setState(() {
+        _chargement = false;
+        _erreur = 'Inscription impossible : $e';
+      });
     }
   }
 

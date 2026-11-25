@@ -2,13 +2,17 @@ import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 import 'screens/accueil/accueil_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Sur ordinateur, il faut initialiser SQLite à la main
-  if (!kIsWeb && (Platform.isWindows || Platform.isLinux)) {
+  // Dans le navigateur : SQLite en WebAssembly (web/sqlite3.wasm)
+  if (kIsWeb) {
+    databaseFactory = databaseFactoryFfiWeb;
+  } else if (Platform.isWindows || Platform.isLinux) {
+    // Sur ordinateur, il faut initialiser SQLite à la main
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
   }
