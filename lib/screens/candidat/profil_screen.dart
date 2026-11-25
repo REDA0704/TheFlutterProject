@@ -142,12 +142,46 @@ class _ProfilScreenState extends State<ProfilScreen> {
           const Divider(height: 32),
           Text('Mes scores', style: Theme.of(context).textTheme.titleLarge),
           if (_resultats.isEmpty) const Text('Aucun test passé.'),
-          for (final r in _resultats)
-            ListTile(
-              title: Text(r.discipline),
-              subtitle: Text(_date(r.date)),
-              trailing: Text('${r.score}/${r.total}'),
-            ),
+          for (final r in _resultats) _tuileScore(r),
+        ],
+      ),
+    );
+  }
+
+  // Même code couleur que le tableau de bord admin (US6) :
+  // vert = réussi, rouge = échoué, orange = test en cours.
+  Widget _tuileScore(Resultat r) {
+    final taux = r.total == 0 ? 0.0 : r.score / r.total;
+    final reussi = taux >= DatabaseService.seuilReussite;
+    final couleur = r.enCours
+        ? Colors.orange.shade800
+        : (reussi ? Colors.green.shade700 : Colors.red.shade700);
+    final statut = r.enCours ? 'En cours' : (reussi ? 'Réussi' : 'Échoué');
+
+    return ListTile(
+      leading: CircleAvatar(
+        backgroundColor: couleur,
+        foregroundColor: Colors.white,
+        child: Icon(
+          r.enCours
+              ? Icons.hourglass_top
+              : (reussi ? Icons.check : Icons.close),
+        ),
+      ),
+      title: Text(r.discipline),
+      subtitle: Text('${_date(r.date)} · $statut'),
+      trailing: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Text(
+            '${r.score}/${r.total}',
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+          Text(
+            '${(taux * 100).toStringAsFixed(0)} %',
+            style: TextStyle(color: couleur),
+          ),
         ],
       ),
     );
